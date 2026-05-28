@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>H1CL Oral Revision Flashcards</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 统一的宜居城市主题玻璃拟态卡片容器 */
+        .glass-card {
+            background: rgba(16, 185, 129, 0.1);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 30px -5px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* 3D 翻转逻辑 */
+        .card-container {
+            perspective: 1000px;
+            width: 90vw;
+            max-width: 400px;
+            height: 60vh;
+            max-height: 600px;
+            margin: auto;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+        }
+
+        /* 滚动区域优化 */
+        .content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .content-scroll::-webkit-scrollbar {
+            width: 3px;
+        }
+        .content-scroll::-webkit-scrollbar-thumb {
+            background: rgba(16, 185, 129, 0.3);
+            border-radius: 10px;
+        }
+
+        /* 字体大小强制一行 */
+        .word-text {
+            font-weight: 900;
+            background: linear-gradient(to bottom right, #ffffff, #a7f3d0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            white-space: nowrap; /* 强制单行显示 */
+            width: 100%;
+        }
+
+        .highlight {
+            color: #34d399;
+            font-weight: bold;
+            border-bottom: 2px solid #34d399;
+        }
+
+        /* 手机适配高度 */
+        @media (max-height: 700px) {
+            .card-container { height: 70vh; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部固定信息与标题 (全中文标题) -->
+    <header class="p-6 text-center z-20 w-full max-w-md mx-auto">
+        <div class="flex justify-between items-end mb-2">
+            <div>
+                <p class="text-[10px] tracking-[0.2em] text-emerald-400 font-bold uppercase mb-0.5">H1CL Oral Topic</p>
+                <h1 class="text-2xl font-black text-white">宜居城市</h1>
+            </div>
+            <div id="counter" class="text-sm text-emerald-400 font-mono font-bold">01 / 23</div>
+        </div>
+        <!-- 进度条 -->
+        <div class="h-1 bg-slate-800 rounded-full w-full overflow-hidden">
+            <div id="progress" class="h-full bg-emerald-500 transition-all duration-300" style="width: 4%"></div>
+        </div>
+    </header>
+
+    <!-- 闪卡主体 -->
+    <div class="card-container" id="main-container">
+        <div class="card-inner" id="card-inner">
+            
+            <!-- 正面：指示语置于词语正上方 -->
+            <div class="card-front glass-card flex flex-col justify-between" onclick="toggleFlip()">
+                <div class="flex justify-between items-center w-full">
+                    <!-- 英文操作指示语（上方） -->
+                    <span class="text-[10px] text-emerald-400/80 font-bold uppercase tracking-widest">TAP CARD TO FLIP</span>
+                    <!-- 语音播放（小符号） -->
+                    <button onclick="speakWord(event)" class="w-8 h-8 flex items-center justify-center bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-400 rounded-full transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.983 5.983 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.984 3.984 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- 中间词汇（自动缩小字号保证绝不换行） -->
+                <div class="flex-grow flex flex-col justify-center items-center text-center py-4">
+                    <div id="pinyin-text" class="text-emerald-400/70 font-serif text-lg mb-2">yí jū</div>
+                    <div id="word-text" class="word-text">宜居</div>
+                </div>
+                
+                <div class="text-center text-[10px] text-slate-500 font-bold uppercase py-2">
+                    Click to View Details
+                </div>
+            </div>
+
+            <!-- 背面：指示语同样在上方 -->
+            <div class="card-back glass-card flex flex-col" onclick="toggleFlip()">
+                <div class="flex justify-between items-center mb-4 pb-2 border-b border-white/5">
+                    <!-- 英文操作指示语（上方） -->
+                    <span class="text-[10px] text-emerald-400/80 font-bold uppercase tracking-widest">TAP CARD TO RETURN</span>
+                    <span id="word-back-title" class="font-bold text-emerald-400 text-sm">宜居</span>
+                </div>
+                
+                <!-- 详细解释自适应滚动区 -->
+                <div class="content-scroll flex-1 space-y-4 text-left">
+                    <div>
+                        <h4 class="text-[9px] font-bold text-slate-500 uppercase mb-1">Pinyin & Meaning / 拼音与释义</h4>
+                        <div class="bg-white/5 p-3 rounded-xl border border-white/5">
+                            <p id="pinyin-back" class="text-sm font-semibold text-emerald-400 mb-1 italic"></p>
+                            <p id="zh-meaning" class="text-base text-slate-200 leading-snug"></p>
+                            <p id="en-meaning" class="text-xs text-slate-400 italic mt-1"></p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-[9px] font-bold text-slate-500 uppercase mb-1">Collocation / 搭配</h4>
+                        <p id="collocation" class="text-sm text-emerald-100 bg-emerald-950/20 p-2.5 rounded-lg border border-emerald-500/20"></p>
+                    </div>
+
+                    <div class="pb-4">
+                        <h4 class="text-[9px] font-bold text-slate-500 uppercase mb-1">Example / 例句</h4>
+                        <p id="example-sentence" class="text-sm text-slate-300 leading-relaxed"></p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 底部导航与英文操作指令 -->
+    <footer class="p-6 flex flex-col items-center gap-4 max-w-md mx-auto w-full">
+        <div class="flex justify-between items-center w-full">
+            <button onclick="changeCard(-1)" class="w-12 h-12 flex items-center justify-center rounded-full border border-slate-800 text-slate-400 hover:border-emerald-500 hover:text-white transition-all active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            
+            <div class="text-[9px] font-bold text-slate-500 uppercase tracking-widest text-center">
+                Swipe left/right or use keys
+            </div>
+
+            <button onclick="changeCard(1)" class="w-12 h-12 flex items-center justify-center rounded-full border border-slate-800 text-slate-400 hover:border-emerald-500 hover:text-white transition-all active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        const cards = [
+            { word: "宜居", pinyin: "yí jū", zh: "适宜人类居住和生活。", en: "Livable; suitable for living.", coll: "打造{宜居}城市 / 环境{宜居}", ex: "充足的绿化和便捷的交通系统，能让大都市变得更加{宜居}。" },
+            { word: "安居乐业", pinyin: "ān jū lè yè", zh: "安定地生活，愉快地工作。", en: "Live and work in peace and contentment.", coll: "让人民{安居乐业} / 确保{安居乐业}", ex: "良好的社会治安和稳定的经济，是保障百姓{安居乐业}的基石。" },
+            { word: "基础设施", pinyin: "jī chǔ shè shī", zh: "为市民生产和生活提供服务的系统（如供水、供电、交通等）。", en: "Infrastructure.", coll: "完善的{基础设施} / 升级{基础设施}", ex: "一座宜居城市离不开高度发达和完善的交通等{基础设施}。" },
+            { word: "干净", pinyin: "gān jing", zh: "清洁整齐，没有尘土杂质。", en: "Clean; neat.", coll: "保持城市{干净} / 街道{干净}整洁", ex: "严格的垃圾分类和定期清洁对维护公共环境的{干净}至关重要。" },
+            { word: "医疗设施", pinyin: "yī liáo shè shī", zh: "提供防病、治病、康复服务的建筑与设备。", en: "Medical facilities.", coll: "先进的{医疗设施} / 改善{医疗设施}", ex: "随着老龄化人口的增长，政府应当不断升级社区的{医疗设施}。" },
+            { word: "治安", pinyin: "zhì ān", zh: "社会的秩序和安全情况。", en: "Public security / Law and order.", coll: "良好的社会{治安} / 维持良好{治安}", ex: "新加坡能够名列全球安全城市榜首，归功于其极其出色的社会{治安}。" },
+            { word: "和睦共处", pinyin: "hé mù gòng chǔ", zh: "彼此相处得很好，关系融洽。", en: "Live together in harmony.", coll: "各种族{和睦共处} / 邻里间{和睦共处}", ex: "在这个多元种族的社会里，国人相互尊重，共同{和睦共处}。" },
+            { word: "教育", pinyin: "jiào yù", zh: "培养人才和传授知识的系统。", en: "Education.", coll: "接受优质{教育} / 普及高水平{教育}", ex: "宜居城市不仅关注物质条件，也提供世界一流的优质{教育}资源。" },
+            { word: "完善", pinyin: "wán shàn", zh: "使事物完备、周全，没有缺陷。", en: "Perfect; comprehensive.", coll: "社会制度非常{完善} / 各种设备不断{完善}", ex: "城市规划者一直致力于为社会残障群体提供更{完善}的无障碍通道。" },
+            { word: "齐全", pinyin: "qí quán", zh: "应该有的事物都有了，完备。", en: "Complete; all-inclusive.", coll: "公共设施一应{齐全} / 物品{齐全}", ex: "这个新住宅小区的配套十分周到，超市、诊所和健身中心一应{齐全}。" },
+            { word: "交通发达", pinyin: "jiāo tōng fā dá", zh: "公共出行网络分布密，极其便捷。", en: "Highly developed transport system.", coll: "城市里{交通发达} / 发挥{交通发达}优势", ex: "在这里，市民几乎能在半小时内乘地铁到达各处，充分体现了{交通发达}带来的便捷。" },
+            { word: "经济稳定", pinyin: "jīng jì wěn dìng", zh: "国家的商业、就业和民生状况不出现剧烈波动。", en: "Economic stability.", coll: "保持社会{经济稳定} / 促进{经济稳定}发展", ex: "{经济稳定}能持续创造更多就业机会，提升广大市民的家庭幸福感。" },
+            { word: "多元文化", pinyin: "duō yuán wén huà", zh: "不同民族的语言、宗教和生活习俗等共同存在的文化景象。", en: "Multiculturalism.", coll: "丰富的{多元文化} / 融合{多元文化}", ex: "这里的各大历史街区不仅具有历史底蕴，更完美展现了社会的{多元文化}魅力。" },
+            { word: "城市化", pinyin: "chéng shì huà", zh: "乡村人口转变为城市人口、地域变为城市的过程。", en: "Urbanization.", coll: "高度的{城市化}进程 / 避免快速{城市化}后遗症", ex: "在推进{城市化}的过程中，规划者必须兼顾绿色自然保护区的平衡。" },
+            { word: "自然景观", pinyin: "zì rán jǐng guān", zh: "天然形成的山水、草木、林石等景象。", en: "Natural landscape.", coll: "保护本土的{自然景观} / 迷人的{自然景观}", ex: "为了给市民提供休闲好去处，城市内开发并保留了许多迷人的{自然景观}。" },
+            { word: "生活节奏", pinyin: "shēng huó jié zòu", coll: "大都市紧凑的{生活节奏}", zh: "日常工作、学习和活动的紧凑程度。", en: "Pace of life." },
+            { word: "生活费", pinyin: "shēng huó fèi", coll: "居高不下的日常{生活费}", zh: "维持基本衣食住行所需的开销。", en: "Cost of living." },
+            { word: "住房", pinyin: "zhù fáng", coll: "解决年轻夫妇的{住房}问题", zh: "居住的屋宇和房产条件。", en: "Housing / Residential property." },
+            { word: "竞争激烈", pinyin: "jìng zhēng jī liè", coll: "社会和职场的{竞争激烈}", zh: "资源或机会的争夺非常严酷、紧凑。", en: "Keen competition; fierce rivalry." },
+            { word: "自由", pinyin: "zì yóu", coll: "享有表达和发展的{自由}", zh: "意志不受外界约束和支配的权利。", en: "Freedom; liberty." },
+            { word: "融入", pinyin: "róng rù", coll: "主动{融入}本地社会和文化", zh: "融进新群体，成为其中一份子。", en: "Integrate into / Blend in." },
+            { word: "归属感", pinyin: "guī shǔ gǎn", coll: "对社区产生强烈的{归属感}", zh: "心理上对某地或某集体的依赖与认同程度。", en: "Sense of belonging." },
+            { word: "凝聚力", pinyin: "níng jù lì", coll: "增强整个社会的{凝聚力}", zh: "促使集体或社会内部团结、不松散的力量。", en: "Cohesion; unifying force." }
+        ];
+
+        let index = 0;
+        let startTouchX = 0;
+
+        function updateCard() {
+            const data = cards[index];
+            const inner = document.getElementById('card-inner');
+            const frontEl = document.getElementById('word-text');
+            const backWordEl = document.getElementById('word-back-title');
+            
+            // 切换时重置为正面
+            inner.classList.remove('is-flipped');
+            isFlipped = false;
+
+            // 正面内容更新
+            frontEl.innerText = data.word;
+            document.getElementById('pinyin-text').innerText = data.pinyin;
+            
+            // 根据字数动态缩小正面字号，防止溢出折行
+            frontEl.className = 'word-text'; // 重置
+            if (data.word.length <= 2) {
+                frontEl.style.fontSize = '4.2rem';
+            } else if (data.word.length <= 4) {
+                frontEl.style.fontSize = '3.3rem';
+            } else {
+                frontEl.style.fontSize = '2.4rem'; // 5字及以上极速自适应缩小
+            }
+
+            // 背面内容更新
+            backWordEl.innerText = data.word;
+            document.getElementById('pinyin-back').innerText = data.pinyin;
+            document.getElementById('zh-meaning').innerText = data.zh;
+            document.getElementById('en-meaning').innerText = data.en;
+            
+            // 高亮搭配词
+            document.getElementById('collocation').innerHTML = data.coll.replace(`{${data.word}}`, `<span class="text-emerald-400 font-bold">${data.word}</span>`);
+            
+            // 高亮例句关键词
+            const exHtml = data.ex ? data.ex.replace(`{${data.word}}`, `<span class="highlight">${data.word}</span>`) : "";
+            document.getElementById('example-sentence').innerHTML = exHtml;
+
+            // 页码与进度条
+            document.getElementById('counter').innerText = `${(index + 1).toString().padStart(2, '0')} / ${cards.length}`;
+            document.getElementById('progress').style.width = `${((index + 1) / cards.length) * 100}%`;
+        }
+
+        function toggleFlip() {
+            document.getElementById('card-inner').classList.toggle('is-flipped');
+        }
+
+        function changeCard(step) {
+            index = (index + step + cards.length) % cards.length;
+            updateCard();
+        }
+
+        function speakWord(e) {
+            e.stopPropagation();
+            const speech = new SpeechSynthesisUtterance(cards[index].word);
+            speech.lang = 'zh-CN';
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(speech);
+        }
+
+        // 手势支持
+        const container = document.getElementById('main-container');
+        container.addEventListener('touchstart', e => startTouchX = e.touches[0].clientX, {passive: true});
+        container.addEventListener('touchend', e => {
+            const endX = e.changedTouches[0].clientX;
+            const diff = startTouchX - endX;
+            if (Math.abs(diff) > 50) {
+                changeCard(diff > 0 ? 1 : -1);
+            }
+        });
+
+        // 键盘支持
+        window.addEventListener('keydown', e => {
+            if (e.key === 'ArrowRight') changeCard(1);
+            if (e.key === 'ArrowLeft') changeCard(-1);
+            if (e.code === 'Space') { e.preventDefault(); toggleFlip(); }
+        });
+
+        updateCard();
+    </script>
+</body>
+</html>
